@@ -259,7 +259,7 @@ class Block(nn.Module):
 
     return x
 
-class VisionTransformer:
+class VisionTransformer(nn.Module):
   '''
   Simplified Vision Transformer
 
@@ -330,7 +330,7 @@ class VisionTransformer:
     self.pos_embed = nn.Parameter(torch.zeros(1, 1 + self.patch_embed.n_patches, embed_dim))
     self.pos_drop = nn.Dropout(p=p)
 
-    self.blocks = nn.ModukeList([
+    self.blocks = nn.ModuleList([
         Block(
             dim=embed_dim,
             n_heads=n_heads,
@@ -377,3 +377,129 @@ class VisionTransformer:
 
     return x
 
+class ViTEncoder(nn.Module):
+    '''
+    Vision Transformer Encoder for feature extraction.
+
+    Parameters
+    ----------
+    img_size: int
+      Both height and width of the image (square considered).
+    patch_size: int
+      Both height and width of the patch (square considered).
+    in_chans: int
+      Number of input channels.
+    embed_dim: int
+      Dimensionality of the token / patch embeddings.
+    depth: int
+      Number of transformer blocks.
+    n_heads: int
+      Number of attention heads.
+    mlp_ratio: float
+      Determines the hidden dimension size of the `MLP` module.
+    qkv_bias: bool
+      If True, then bias is included to query, key and value projections.
+    p, attn_p: float
+      Dropout probability.
+    out_dim: int
+      Dimensionality of the output feature vector (embedding size).
+
+    Attributes
+    ----------
+    patch_embed: PatchEmbed
+      Converts image into patch embeddings.
+    cls_token: nn.Parameter
+      Learnable CLS token.
+    pos_embed: nn.Parameter
+      Positional embeddings.
+    blocks: nn.ModuleList
+      Transformer blocks.
+    norm: nn.LayerNorm
+      Final layer normalization.
+    projection_head: nn.Linear
+      Projection head for contrastive learning.
+    '''
+
+    def __init__(
+        self,
+        img_size=384,
+        patch_size=16,
+        in_chans=3,
+        embed_dim=768,
+        depth=12,
+        n_heads=12,
+        mlp_ratio=4.,
+        qkv_bias=True,
+        p=0.,
+        attn_p=0.,
+        out_dim=256  # Output feature dimension for contrastive learning
+    ):
+        super().__init__()
+
+        self.patch_embed = PatchEmbed(
+            img_size=img_size,
+            patch_size=patch_size,
+            in_chans=in_chans,
+            embed_dim=embed_dim
+        )
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, 1 + self.patch_embed.n_patches, embed_dim))
+        self.pos_drop = nn.Dropout(p=p)
+
+        self.blocks = nn.ModuleList([
+            Block(
+                dim=embed_dim,
+                n_heads=n_heads,
+                mlp_ratio=mlp_ratio,
+                qkv_bias=qkv_bias,
+                p=p,
+                attn_p=attn_p
+            )
+            for _ in range(depth)
+        ])
+
+        self.norm = nn.LayerNorm(embed_dim, eps=1e-6)
+
+        # Projection head for contrastive learning (can be customized)
+        self.projection_head = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim),
+            nn.ReLU(),
+            nn.Linear(embed_dim, out_dim),
+            nn.BatchNorm1d(out_dim)  # Normalize output embeddings
+        )
+
+    def forward(self, x):
+        '''
+        Run forward pass.
+
+        Parameters
+        ----------
+        x: torch.Tensor
+          Shape `(n_samples, in_chans, img_size, img_size)`
+
+        Returns
+        -------
+        torch.Tensor
+          Encoded feature vector - `(n_samples, out_dim)`
+        '''
+
+        n_samples = x.shape[0]
+        x = self.patch_embed(x)
+        cls_token = self.cls_token.expand(n_samples, -1, -1)
+        x = torch.cat((cls_token, x), dim=1)
+        x = x + self.pos_embed
+        x = self.pos_drop(x)
+
+        for block in self.blocks:
+            x = block(x)
+
+        x = self.norm(x)
+        cls_token_final = x[:, 0]  # Extract CLS token representation
+
+        # Project the feature vector
+        x = self.projection_head(cls_token_final)
+
+        # Normalize embeddings (important for contrastive learning)
+        x = nn.functional.normalize(x, dim=-1)
+
+        return x
