@@ -37,6 +37,9 @@ print('Completed classifying images by vehicle id.')
 
 print('Creating train and test sets...')
 
+n_train_imgs = 0
+n_test_imgs = 0
+
 vehicle_ids = os.listdir(out_dir)
 train_dir = os.path.join(out_dir, 'train')
 test_dir = os.path.join(out_dir, 'test')
@@ -52,9 +55,11 @@ train_vehicle_ids = vehicle_ids[:split_idx]
 test_vehicle_ids = vehicle_ids[split_idx:]
 
 for vehicle_id in train_vehicle_ids:
+    n_train_imgs += len(os.listdir(os.path.join(out_dir, vehicle_id)))
     shutil.move(os.path.join(out_dir, vehicle_id), os.path.join(train_dir, vehicle_id))
 
 for vehicle_id in test_vehicle_ids:
+    n_test_imgs += len(os.listdir(os.path.join(out_dir, vehicle_id)))
     shutil.move(os.path.join(out_dir, vehicle_id), os.path.join(test_dir, vehicle_id))
 
 print('Completed creating train and test sets.')
@@ -62,7 +67,35 @@ print('Completed creating train and test sets.')
 print('Data preparation summary:')
 print('-------------------------')
 print(f'Total vehicle identities: {len(vehicle_ids)}')
-print(f'Length of train set: {len(train_vehicle_ids)}')
-print(f'Length of test set: {len(test_vehicle_ids)}')
+print(f'Number of vehicle IDs in train set: {len(train_vehicle_ids)}')
+print(f'Number of vehicle IDs in test set: {len(test_vehicle_ids)}')
+print(f'Total images in train set: {n_train_imgs}')
+print(f'Total images in test set: {n_test_imgs}')
+print(f'Train-test ratio by vehicle IDs: {len(train_vehicle_ids) / (len(train_vehicle_ids) + len(test_vehicle_ids)):.2f}')
+print(f'Train-test ratio by images: {n_train_imgs / (n_train_imgs + n_test_imgs):.2f}')
 print(f'Train set saved to: {train_dir}')
 print(f'Test set saved to: {test_dir}')
+
+############################## LAST OUTPUT ##############################
+
+# Classifying images by vehicle id...
+# Processing ./data/VeRi_CARLA_dataset/image_query
+# 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 424/424 [00:00<00:00, 2780.18it/s]
+# Processing ./data/VeRi_CARLA_dataset/image_gallery
+# 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 3823/3823 [00:01<00:00, 3181.83it/s]
+# Processing ./data/VeRi_CARLA_dataset/image_train
+# 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 50949/50949 [00:17<00:00, 2905.81it/s]
+# Completed classifying images by vehicle id.
+# Creating train and test sets...
+# Completed creating train and test sets.
+# Data preparation summary:
+# -------------------------
+# Total vehicle identities: 605
+# Number of vehicle IDs in train set: 484
+# Number of vehicle IDs in test set: 121
+# Total images in train set: 43645
+# Total images in test set: 11551
+# Train-test ratio by vehicle IDs: 0.80
+# Train-test ratio by images: 0.79
+# Train set saved to: ./data/prepared_VeRi_CARLA_dataset/train
+# Test set saved to: ./data/prepared_VeRi_CARLA_dataset/test
