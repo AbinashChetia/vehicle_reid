@@ -23,6 +23,8 @@ class VehicleReIDDataset(Dataset):
 
         # Collect all image paths and labels
         for vehicle_id in self.vehicle_ids:
+            if not os.path.isdir(os.path.join(root_dir, vehicle_id)):
+                continue
             vehicle_folder = os.path.join(root_dir, vehicle_id)
             images = os.listdir(vehicle_folder)
             for img in images:
