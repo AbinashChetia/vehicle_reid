@@ -259,7 +259,7 @@ class Block(nn.Module):
 
     return x
 
-class VisionTransformer(nn.Module):
+class ViT(nn.Module):
   '''
   Simplified Vision Transformer
 
