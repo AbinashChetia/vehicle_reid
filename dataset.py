@@ -40,7 +40,14 @@ class VehicleReIDDataset(Dataset):
             self.labels = [self.label_to_idx[label] for label in self.labels]
 
         elif name == 'VeRi_CARLA':
-            pass
+            img_filenames = os.listdir(root_dir)
+            self.vehicle_ids = list(set([img_filename.split('_')[-1] for img_filename in img_filenames]))
+            for img_filename in img_filenames:
+                self.image_paths.append(os.path.join(root_dir, img_filename))
+                self.labels.append(img_filename.split('_')[-1].split('.')[0])
+            # Convert vehicle IDs to numerical labels
+            self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
+            self.labels = [self.label_to_idx[label] for label in self.labels]
         elif name == 'VRIC':
             pass
 
