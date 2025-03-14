@@ -3,7 +3,7 @@ from PIL import Image
 import os
 
 class VehicleReIDDataset(Dataset):
-    def __init__(self, name, root_dir, transform=None):
+    def __init__(self, name, root_dir, labels_file=None, transform=None):
         """
         root_dir: Directory containing images in structure:
         transform: Image transformations
@@ -40,6 +40,11 @@ class VehicleReIDDataset(Dataset):
             self.labels = [self.label_to_idx[label] for label in self.labels]
 
         elif name == 'VeRi_CARLA':
+            '''
+            root_dir/
+                    ├── datetime1_cameraID1_vehicleID1.jpg
+                    ├── datetime2_cameraID2_vehicleID2.jpg
+            '''
             img_filenames = os.listdir(root_dir)
             self.vehicle_ids = list(set([img_filename.split('_')[-1] for img_filename in img_filenames]))
             for img_filename in img_filenames:
@@ -49,7 +54,33 @@ class VehicleReIDDataset(Dataset):
             self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
             self.labels = [self.label_to_idx[label] for label in self.labels]
         elif name == 'VRIC':
-            pass
+            '''
+            VRIC_dataset/
+                        ├── gallery_images/
+                        │   ├── img1.jpg
+                        │   ├── img2.jpg
+                        ├── probe_images/
+                        │   ├── img1.jpg
+                        │   ├── img2.jpg
+                        |── train_images/
+                        │   ├── img1.jpg
+                        │   ├── img2.jpg
+                        |── vric_gallery.txt - img_path label camera_id
+                        |── vric_probe.txt - img_path label camera_id
+                        |── vric_train.txt - img_path label camera_id
+                        |── README.txt
+            '''
+            if labels_file is None:
+                raise ValueError('Labels file must be provided for VRIC dataset.')
+            with open(labels_file, 'r') as f:
+                lines = f.readlines()
+                for line in lines:
+                    img_path, label, _ = line.strip().split()
+                    self.image_paths.append(os.path.join(root_dir, img_path))
+                    self.labels.append(label)
+            # Convert vehicle IDs to numerical labels
+            self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
+            self.labels = [self.label_to_idx[label] for label in self.labels]
 
     def __len__(self):
         return len(self.image_paths)
