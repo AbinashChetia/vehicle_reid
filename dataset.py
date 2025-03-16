@@ -65,9 +65,9 @@ class VehicleReIDDataset(Dataset):
                         |── train_images/
                         │   ├── img1.jpg
                         │   ├── img2.jpg
-                        |── vric_gallery.txt - img_path label camera_id
-                        |── vric_probe.txt - img_path label camera_id
-                        |── vric_train.txt - img_path label camera_id
+                        |── vric_gallery.txt - [img_path] [label] [camera_id]
+                        |── vric_probe.txt - [img_path] [label] [camera_id]
+                        |── vric_train.txt - [img_path] [label] [camera_id]
                         |── README.txt
             '''
             if labels_file is None:
