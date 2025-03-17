@@ -1,4 +1,6 @@
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader, SubsetRandomSampler
+from sklearn.model_selection import train_test_split
+import numpy as np
 from PIL import Image
 import os
 
@@ -94,3 +96,46 @@ class VehicleReIDDataset(Dataset):
             image = self.transform(image)
 
         return image, label
+    
+def dataloader_train_test_split(full_dataset, test_split=0.2, shuffle_dataset=True, batch_size=32, random_seed=42):
+    '''
+    Splits a PyTorch DataLoader into training and test DataLoaders.
+
+    Parameters:
+    -----------
+    full_dataset: torch.utils.data.Dataset
+        The original PyTorch Dataset.
+    test_split: float
+        The fraction of the dataset to use for testing.
+    shuffle_dataset: bool
+        Whether to shuffle the dataset before splitting.
+    batch_size: int
+        Batch size for the created DataLoaders.
+    random_seed: int
+        Random seed for reproducibility.
+
+    Returns:
+    --------
+    train_loader: torch.utils.data.Dataloader
+        DataLoader for the training set.
+    val_loader: torch.utils.data.Dataloader
+        DataLoader for the validation set.
+    '''
+
+    dataset_size = len(full_dataset)
+    indices = list(range(dataset_size))
+
+    if shuffle_dataset:
+        np.random.seed(random_seed)
+        np.random.shuffle(indices)
+
+    test_size = int(test_split * dataset_size)
+    train_indices, test_indices = indices[test_size:], indices[:test_size]
+
+    train_sampler = SubsetRandomSampler(train_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
+
+    train_loader = DataLoader(full_dataset, batch_size=batch_size, sampler=train_sampler)
+    test_loader = DataLoader(full_dataset, batch_size=batch_size, sampler=test_sampler)
+
+    return train_loader, test_loader
