@@ -5,7 +5,7 @@ from PIL import Image
 import os
 
 class VehicleReIDDataset(Dataset):
-    def __init__(self, name, root_dir, labels_file=None, transform=None):
+    def __init__(self, name, root_dir, labels_file=None, transform=None, n_datapoints=None):
         """
         root_dir: Directory containing images in structure:
         transform: Image transformations
@@ -41,6 +41,9 @@ class VehicleReIDDataset(Dataset):
             self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
             self.labels = [self.label_to_idx[label] for label in self.labels]
 
+            if n_datapoints:
+                self.image_paths, _, self.labels, _ = train_test_split(self.image_paths, self.labels, train_size=n_datapoints, stratify=self.labels)
+
         elif name == 'VeRi_CARLA':
             '''
             root_dir/
@@ -55,6 +58,10 @@ class VehicleReIDDataset(Dataset):
             # Convert vehicle IDs to numerical labels
             self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
             self.labels = [self.label_to_idx[label] for label in self.labels]
+
+            if n_datapoints:
+                self.image_paths, _, self.labels, _ = train_test_split(self.image_paths, self.labels, train_size=n_datapoints, stratify=self.labels)
+
         elif name == 'VRIC':
             '''
             VRIC_dataset/
@@ -83,6 +90,12 @@ class VehicleReIDDataset(Dataset):
             # Convert vehicle IDs to numerical labels
             self.label_to_idx = {label: idx for idx, label in enumerate(set(self.labels))}
             self.labels = [self.label_to_idx[label] for label in self.labels]
+
+            if n_datapoints:
+                self.image_paths, _, self.labels, _ = train_test_split(self.image_paths, self.labels, train_size=n_datapoints, stratify=self.labels)
+        
+        else:
+            raise NotImplementedError(f'{name} dataset is not supported yet.')
 
     def __len__(self):
         return len(self.image_paths)
